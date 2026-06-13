@@ -9,269 +9,187 @@
 <title>CDK Timer</title>
 <link rel="manifest" href="manifest.webmanifest">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg:    #ffffff; --bg2: #f5f5f5; --bg3: #e8e8e8;
-  --text:  #1a1a1a; --text2: #555; --text3: #999;
-  --border: rgba(0,0,0,.1); --border2: rgba(0,0,0,.2);
-  --green: #2d6a1f; --yellow: #9a6000; --red: #8b1a1a;
-  --accent: #1a1a1a;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f4f4f4;--bg3:#e8e8e8;
+  --text:#1a1a1a;--text2:#555;--text3:#999;
+  --border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.18);
+  --green:#2d6a1f;--yellow:#9a6000;--red:#8b1a1a;
+  --red-light:#fdecea;--accent:#1a1a1a;--r:10px;
 }
-body { font-family: -apple-system,'Helvetica Neue',sans-serif; background:var(--bg); color:var(--text); height:100dvh; overflow:hidden; }
+body{font-family:-apple-system,'Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);height:100dvh;overflow:hidden}
 
-/* ── 공통 ── */
-.page { display:none; flex-direction:column; height:100dvh; }
-.page.active { display:flex; }
-.top-bar {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:10px 18px; border-bottom:1px solid var(--border);
-  background:var(--bg2); flex-shrink:0;
-}
-.top-bar .session-name { font-size:15px; font-weight:500; }
-.top-bar .next-hint { font-size:12px; color:var(--text3); }
-.badge {
-  font-size:11px; font-weight:600; letter-spacing:.07em;
-  padding:3px 10px; border-radius:99px;
-  border:1px solid var(--border2); color:var(--text2);
-}
-.conn-dot {
-  width:7px; height:7px; border-radius:50%;
-  background:#ccc; display:inline-block; margin-right:5px;
-  transition:background .3s;
-}
-.conn-dot.ok { background:#2d6a1f; }
-.conn-dot.err { background:#8b1a1a; }
+/* 공통 */
+.page{display:none;flex-direction:column;height:100dvh}
+.page.active{display:flex}
+.top-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.session-name{font-size:15px;font-weight:500}
+.next-hint{font-size:12px;color:var(--text3)}
+.badge{font-size:11px;font-weight:600;letter-spacing:.07em;padding:3px 10px;border-radius:99px;border:1px solid var(--border2);color:var(--text2)}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:#ccc;display:inline-block;margin-right:4px;transition:background .3s}
+.conn-dot.ok{background:#2d6a1f}.conn-dot.err{background:#8b1a1a}
 
-/* ── 역할 선택 ── */
-#pg-select { align-items:center; justify-content:center; gap:28px; padding:24px; }
-.select-title { font-size:32px; font-weight:300; letter-spacing:-.03em; text-align:center; }
-.select-sub   { font-size:14px; color:var(--text3); text-align:center; margin-top:4px; }
-.role-cards   { display:flex; flex-direction:column; gap:10px; width:100%; max-width:340px; }
-.role-card {
-  display:flex; align-items:center; gap:14px;
-  padding:18px 20px; border-radius:14px;
-  border:1.5px solid var(--border2); background:var(--bg);
-  cursor:pointer; transition:background .1s, transform .08s;
-}
-.role-card:active { transform:scale(.97); }
-.role-card:hover  { background:var(--bg2); }
-.role-card .rc-icon { font-size:26px; color:var(--text2); }
-.role-card .rc-name { font-size:17px; font-weight:500; }
-.role-card .rc-desc { font-size:12px; color:var(--text3); margin-top:2px; }
-.role-card .rc-arr  { margin-left:auto; font-size:18px; color:var(--text3); }
+/* 역할 선택 */
+#pg-select{align-items:center;justify-content:center;gap:28px;padding:24px}
+.sel-title{font-size:32px;font-weight:300;letter-spacing:-.03em;text-align:center}
+.sel-sub{font-size:14px;color:var(--text3);text-align:center;margin-top:4px}
+.role-cards{display:flex;flex-direction:column;gap:10px;width:100%;max-width:340px}
+.role-card{display:flex;align-items:center;gap:14px;padding:18px 20px;border-radius:14px;border:1.5px solid var(--border2);background:var(--bg);cursor:pointer;transition:background .1s,transform .08s;-webkit-tap-highlight-color:transparent}
+.role-card:hover{background:var(--bg2)}.role-card:active{transform:scale(.97);background:var(--bg3)}
+.rc-icon{font-size:26px;color:var(--text2)}.rc-name{font-size:17px;font-weight:500}.rc-desc{font-size:12px;color:var(--text3);margin-top:2px}.rc-arr{margin-left:auto;font-size:18px;color:var(--text3)}
 
-/* ── 방 코드 입력/생성 ── */
-#pg-room { align-items:center; justify-content:center; gap:24px; padding:24px; }
-.room-box {
-  width:100%; max-width:320px;
-  border:1.5px solid var(--border2); border-radius:16px;
-  padding:24px; display:flex; flex-direction:column; gap:14px;
-}
-.room-box h2 { font-size:16px; font-weight:500; }
-.room-code-display {
-  font-size:36px; font-weight:300; letter-spacing:.12em;
-  text-align:center; padding:16px; background:var(--bg2);
-  border-radius:10px; color:var(--text); font-variant-numeric:tabular-nums;
-}
-.room-input {
-  width:100%; padding:12px 16px; font-size:22px; font-weight:300;
-  letter-spacing:.15em; text-align:center; text-transform:uppercase;
-  border:1.5px solid var(--border2); border-radius:10px;
-  background:var(--bg); color:var(--text);
-}
-.big-btn {
-  width:100%; padding:14px; font-size:15px; font-weight:600;
-  border-radius:10px; border:none; cursor:pointer;
-  background:var(--accent); color:#fff; transition:opacity .1s;
-}
-.big-btn:active { opacity:.8; }
-.big-btn.secondary {
-  background:var(--bg2); color:var(--text);
-  border:1.5px solid var(--border2);
-}
-.room-hint { font-size:12px; color:var(--text3); text-align:center; }
+/* 방 입력 */
+#pg-room-admin,#pg-room-join{align-items:center;justify-content:center;padding:24px}
+.room-box{width:100%;max-width:320px;border:1.5px solid var(--border2);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:14px}
+.room-box h2{font-size:16px;font-weight:500}
+.room-input{width:100%;padding:12px 16px;font-size:22px;font-weight:300;letter-spacing:.1em;text-align:center;border:1.5px solid var(--border2);border-radius:var(--r);background:var(--bg);color:var(--text);transition:border-color .2s}
+.room-input:focus{outline:none;border-color:var(--accent)}
+.room-hint{font-size:12px;color:var(--text3);text-align:center}
+.big-btn{width:100%;padding:14px;font-size:15px;font-weight:600;border-radius:var(--r);border:none;cursor:pointer;background:var(--accent);color:#fff;transition:opacity .1s,transform .08s;-webkit-tap-highlight-color:transparent}
+.big-btn:active{opacity:.8;transform:scale(.98)}
+.big-btn.sec{background:var(--bg2);color:var(--text);border:1.5px solid var(--border2)}
 
-/* ── 연결 대기 ── */
-#pg-waiting { align-items:center; justify-content:center; gap:20px; padding:24px; }
-.waiting-code { font-size:48px; font-weight:300; letter-spacing:.15em; color:var(--text); }
-.waiting-sub  { font-size:14px; color:var(--text3); text-align:center; }
-.waiting-dots span {
-  display:inline-block; width:8px; height:8px; border-radius:50%;
-  background:var(--text3); margin:0 3px;
-  animation:dot-blink 1.2s infinite;
-}
-.waiting-dots span:nth-child(2) { animation-delay:.2s; }
-.waiting-dots span:nth-child(3) { animation-delay:.4s; }
-@keyframes dot-blink { 0%,80%,100%{opacity:.2} 40%{opacity:1} }
+/* 타이머 공통 */
+.timer-center{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;position:relative}
+.timer-display{font-size:clamp(72px,22vw,150px);font-weight:300;letter-spacing:-.04em;font-variant-numeric:tabular-nums;line-height:1;color:var(--text);transition:color .3s}
+.timer-display.warn{color:var(--yellow)}.timer-display.danger{color:var(--red)}
+.timer-display.over{color:var(--red);animation:blink 1s step-start infinite}
+.timer-display.up{color:var(--text2)}
+@keyframes blink{50%{opacity:.2}}
+.prog-wrap{width:min(440px,80vw);height:4px;background:var(--bg3);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;border-radius:99px;background:var(--green);transition:width .9s linear,background .3s}
+.prog-fill.warn{background:var(--yellow)}.prog-fill.danger{background:var(--red)}.prog-fill.over{background:var(--red)}.prog-fill.up{background:var(--text3)}
+.mode-badge{font-size:11px;padding:2px 8px;border-radius:99px;background:var(--bg3);color:var(--text3)}
+.msg-popup{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);min-width:260px;max-width:88vw;padding:14px 22px;border-radius:12px;border:1.5px solid var(--border2);background:var(--bg);font-size:17px;font-weight:500;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.12);display:none;z-index:50}
+.msg-popup.show{display:block;animation:popIn .2s ease}
+@keyframes popIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
-/* ── 타이머 (연자/좌장 공통) ── */
-.timer-center {
-  flex:1; display:flex; flex-direction:column;
-  align-items:center; justify-content:center; gap:14px;
-}
-.timer-display {
-  font-size:clamp(72px,20vw,148px); font-weight:300;
-  letter-spacing:-.04em; font-variant-numeric:tabular-nums;
-  line-height:1; color:var(--text); transition:color .3s;
-}
-.timer-display.warn   { color:var(--yellow); }
-.timer-display.danger { color:var(--red); }
-.timer-display.over   { color:var(--red); animation:blink 1s step-start infinite; }
-@keyframes blink { 50%{opacity:.2} }
-.prog-wrap { width:min(440px,80vw); height:4px; background:var(--bg3); border-radius:99px; overflow:hidden; }
-.prog-fill { height:100%; border-radius:99px; background:var(--green); transition:width .9s linear,background .3s; }
-.prog-fill.warn   { background:var(--yellow); }
-.prog-fill.danger, .prog-fill.over { background:var(--red); }
+/* 좌장 */
+#pg-chair{position:relative}
+.chair-btns{display:flex;gap:8px;padding:12px 14px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+.ch-btn{flex:1;min-width:68px;padding:12px 4px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);font-size:12px;font-weight:500;cursor:pointer;color:var(--text);display:flex;flex-direction:column;align-items:center;gap:3px;transition:background .1s,transform .08s;-webkit-tap-highlight-color:transparent}
+.ch-btn i{font-size:20px}.ch-btn:hover{background:var(--bg3)}.ch-btn:active{transform:scale(.93);filter:brightness(.88)}
+.ch-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.ch-btn.primary:active{filter:brightness(.72)}
+.sess-list{overflow-y:auto;max-height:150px;border-top:1px solid var(--border);flex-shrink:0}
+.sess-row{display:flex;align-items:center;gap:10px;padding:9px 16px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .1s}
+.sess-row:hover{background:var(--bg2)}.sess-row:active{background:var(--bg3)}
+.sess-row.active{border-left:3px solid var(--accent);background:var(--bg2)}.sess-row.done{opacity:.35}
+.s-dot{width:7px;height:7px;border-radius:50%;background:var(--border2);flex-shrink:0}
+.s-dot.active{background:var(--green)}.s-dot.done{background:var(--border)}
+.s-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.s-dur{font-size:12px;color:var(--text3)}
 
-/* 메시지 팝업 */
-.msg-popup {
-  position:absolute; bottom:100px; left:50%; transform:translateX(-50%);
-  min-width:260px; max-width:88vw; padding:14px 22px;
-  border-radius:12px; border:1.5px solid var(--border2);
-  background:var(--bg); font-size:17px; font-weight:500;
-  text-align:center; z-index:50;
-  box-shadow:0 4px 20px rgba(0,0,0,.1);
-  display:none;
-}
-.msg-popup.show { display:block; animation:popIn .2s ease; }
-@keyframes popIn {
-  from{opacity:0;transform:translateX(-50%) translateY(10px)}
-  to  {opacity:1;transform:translateX(-50%) translateY(0)}
-}
+/* 관리자 */
+#pg-admin{overflow-y:auto;flex-direction:column}
+.adm-header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;position:sticky;top:0;z-index:10}
+.adm-header h1{font-size:16px;font-weight:600;flex:1}
+.adm-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;position:sticky;top:49px;z-index:9}
+.adm-tab{flex:1;padding:10px;font-size:13px;font-weight:500;color:var(--text3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s}
+.adm-tab.active{color:var(--text);border-bottom-color:var(--accent)}
+.adm-tab-content{display:none;padding:14px;flex-direction:column;gap:12px}
+.adm-tab-content.active{display:flex}
 
-/* ── 좌장 컨트롤 ── */
-.chair-btns {
-  display:flex; gap:8px; padding:12px 14px;
-  border-top:1px solid var(--border); background:var(--bg2); flex-shrink:0; flex-wrap:wrap;
-}
-.ch-btn {
-  flex:1; min-width:68px; padding:11px 4px; border-radius:10px;
-  border:1px solid var(--border2); background:var(--bg);
-  font-size:12px; font-weight:500; cursor:pointer; color:var(--text);
-  display:flex; flex-direction:column; align-items:center; gap:3px;
-  transition:background .1s, transform .08s;
-}
-.ch-btn:active { transform:scale(.95); }
-.ch-btn i { font-size:20px; }
-.ch-btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-.ch-btn.warn-btn { color:var(--yellow); border-color:#c8860a; }
+/* 통계 */
+.stat-row{display:flex;gap:8px}
+.stat-card{flex:1;padding:10px 12px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg2)}
+.stat-label{font-size:11px;color:var(--text3);margin-bottom:2px}
+.stat-val{font-size:20px;font-weight:500;font-variant-numeric:tabular-nums;transition:color .25s}
 
-/* 좌장 세션 목록 */
-.sess-list { overflow-y:auto; max-height:160px; border-top:1px solid var(--border); flex-shrink:0; }
-.sess-row {
-  display:flex; align-items:center; gap:10px;
-  padding:9px 16px; font-size:13px; cursor:pointer;
-  border-bottom:1px solid var(--border); transition:background .1s;
-}
-.sess-row:hover { background:var(--bg2); }
-.sess-row.active { border-left:3px solid var(--accent); }
-.sess-row.done   { opacity:.35; }
-.s-dot { width:7px; height:7px; border-radius:50%; background:var(--border2); flex-shrink:0; }
-.s-dot.active { background:var(--green); }
-.s-dot.done   { background:var(--border); }
-.s-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.s-dur  { font-size:12px; color:var(--text3); }
+/* 카드 */
+.adm-card{border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.adm-card-hd{padding:9px 14px;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text2);background:var(--bg3);border-bottom:1px solid var(--border)}
 
-/* ── 관리자 ── */
-#pg-admin { overflow-y:auto; }
-.adm-header {
-  display:flex; align-items:center; gap:10px;
-  padding:12px 16px; border-bottom:1px solid var(--border);
-  background:var(--bg2); flex-shrink:0;
-}
-.adm-header h1 { font-size:16px; font-weight:600; flex:1; }
-.adm-body { padding:14px; display:flex; flex-direction:column; gap:12px; }
-.stat-row { display:flex; gap:8px; }
-.stat-card { flex:1; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:var(--bg2); }
-.stat-label { font-size:11px; color:var(--text3); margin-bottom:2px; }
-.stat-val   { font-size:20px; font-weight:500; font-variant-numeric:tabular-nums; }
-.adm-card { border:1px solid var(--border); border-radius:12px; overflow:hidden; }
-.adm-card-hd {
-  padding:9px 14px; font-size:11px; font-weight:700; letter-spacing:.06em;
-  color:var(--text2); background:var(--bg3); border-bottom:1px solid var(--border);
-}
-.ctrl-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; padding:10px; }
-.ctrl-btn {
-  padding:9px 4px; border-radius:8px; border:1px solid var(--border2);
-  background:var(--bg); font-size:12px; font-weight:500; cursor:pointer; color:var(--text);
-  display:flex; flex-direction:column; align-items:center; gap:3px; transition:background .1s;
-}
-.ctrl-btn i { font-size:17px; }
-.ctrl-btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
-.ctrl-btn.warn-c  { color:#856404; border-color:#c8a415; }
+/* 타이머 모드 */
+.mode-toggle{display:flex;padding:12px;gap:0}
+.mode-btn-t{flex:1;padding:10px;font-size:13px;font-weight:500;border:1px solid var(--border2);background:var(--bg);cursor:pointer;color:var(--text2);transition:background .1s}
+.mode-btn-t:first-child{border-radius:8px 0 0 8px}.mode-btn-t:last-child{border-radius:0 8px 8px 0;border-left:none}
+.mode-btn-t.active{background:var(--accent);color:#fff;border-color:var(--accent)}
 
-/* 메시지 패널 */
-.msg-panel { padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
-.msg-target { font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--text3); margin-top:4px; }
-.preset-row { display:flex; flex-wrap:wrap; gap:6px; }
-.preset-btn {
-  padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;
-  border:1px solid var(--border2); background:var(--bg); color:var(--text);
-  transition:background .1s;
-}
-.preset-btn:hover { background:var(--bg2); }
-.preset-btn.chair-p   { border-color:#1a4f72; color:#1a4f72; }
-.preset-btn.speaker-p { border-color:#7b241c; color:#7b241c; }
-.custom-row { display:flex; gap:6px; }
-.custom-row input {
-  flex:1; padding:8px 11px; border-radius:8px;
-  border:1px solid var(--border2); background:var(--bg);
-  font-size:13px; color:var(--text);
-}
-.send-btn {
-  padding:8px 12px; border-radius:8px; font-size:13px; font-weight:500;
-  border:1px solid var(--border2); background:var(--bg); cursor:pointer; color:var(--text);
-}
-.send-btn.chair-s   { border-color:#1a4f72; color:#1a4f72; }
-.send-btn.speaker-s { border-color:#7b241c; color:#7b241c; }
+/* 4버튼 제어 */
+.ctrl-4{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px}
+.ctrl-btn{padding:14px 8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);font-size:14px;font-weight:600;cursor:pointer;color:var(--text);display:flex;flex-direction:column;align-items:center;gap:5px;transition:background .1s,transform .08s,filter .08s;-webkit-tap-highlight-color:transparent}
+.ctrl-btn i{font-size:22px}.ctrl-btn:hover{background:var(--bg3)}.ctrl-btn:active{transform:scale(.93);filter:brightness(.85)}
+.ctrl-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.ctrl-btn.primary:active{filter:brightness(.7)}
+.ctrl-btn.danger{color:var(--red);border-color:var(--red)}.ctrl-btn.danger:active{background:var(--red-light)}
+
+/* 시간 조정 */
+.time-adj{display:flex;gap:6px;padding:0 12px 12px;flex-wrap:wrap}
+.adj-btn{flex:1;min-width:60px;padding:8px 4px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);font-size:12px;font-weight:500;cursor:pointer;color:var(--text2);transition:background .1s,transform .08s;-webkit-tap-highlight-color:transparent}
+.adj-btn:hover{background:var(--bg3)}.adj-btn:active{transform:scale(.93);filter:brightness(.88)}
+
+/* 프리뷰 */
+.preview-wrap{display:flex;gap:10px;flex-wrap:wrap}
+.preview-card{flex:1;min-width:140px;border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--bg2)}
+.preview-label{padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text2);background:var(--bg3);border-bottom:1px solid var(--border)}
+.preview-body{padding:16px 12px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.preview-clock{font-size:clamp(28px,8vw,48px);font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:-.03em;transition:color .3s}
+.preview-clock.warn{color:var(--yellow)}.preview-clock.danger{color:var(--red)}.preview-clock.over{color:var(--red)}.preview-clock.up{color:var(--text2)}
+.preview-prog{width:100%;height:3px;background:var(--bg3);border-radius:99px;overflow:hidden}
+.preview-prog-fill{height:100%;border-radius:99px;background:var(--green);transition:width .9s linear,background .3s}
+.preview-prog-fill.warn{background:var(--yellow)}.preview-prog-fill.danger{background:var(--red)}.preview-prog-fill.up{background:var(--text3)}
+.preview-sess{font-size:11px;color:var(--text3);text-align:center}
+.preview-msg{font-size:11px;padding:4px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--border2);color:var(--text2);text-align:center;min-height:24px;width:100%}
+
+/* 메시지 */
+.msg-panel{padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.msg-target{font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text3);margin-top:4px}
+.preset-row{display:flex;flex-wrap:wrap;gap:6px}
+.preset-btn{padding:7px 12px;border-radius:8px;font-size:12px;cursor:pointer;border:1px solid var(--border2);background:var(--bg);color:var(--text);transition:background .1s,transform .08s;-webkit-tap-highlight-color:transparent}
+.preset-btn:active{transform:scale(.94);filter:brightness(.88)}
+.preset-btn.cp{border-color:#1a4f72;color:#1a4f72}.preset-btn.cp:active{background:#eaf2fb}
+.preset-btn.sp{border-color:#7b241c;color:#7b241c}.preset-btn.sp:active{background:#fdecea}
+.custom-row{display:flex;gap:6px}
+.custom-row input{flex:1;padding:8px 11px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);font-size:13px;color:var(--text)}
+.custom-row input:focus{outline:none;border-color:var(--accent)}
+.send-btn{padding:8px 12px;border-radius:8px;font-size:13px;font-weight:500;border:1px solid var(--border2);background:var(--bg);cursor:pointer;transition:background .1s,transform .08s;-webkit-tap-highlight-color:transparent}
+.send-btn:active{transform:scale(.93)}.send-btn.cs{border-color:#1a4f72;color:#1a4f72}.send-btn.ss{border-color:#7b241c;color:#7b241c}
+.msg-log{padding:8px 12px;display:flex;flex-direction:column;gap:5px;max-height:140px;overflow-y:auto}
+.log-item{font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid var(--border)}
+.log-item.lc{background:#eaf2fb;border-color:#aed6f1;color:#1a4f72}.log-item.ls{background:#fdecea;border-color:#f5b7b1;color:#7b241c}
+.log-meta{font-size:10px;color:var(--text3);margin-top:2px}
 
 /* 세션 편집 */
-.sess-edit { padding:10px 12px; display:flex; flex-direction:column; gap:6px; }
-.se-row { display:flex; gap:6px; align-items:center; }
-.se-row input[type=text]   { flex:2; min-width:80px; padding:7px 9px; border-radius:8px; border:1px solid var(--border2); background:var(--bg); font-size:13px; color:var(--text); }
-.se-row input[type=number] { width:54px; padding:7px 7px; border-radius:8px; border:1px solid var(--border2); background:var(--bg); font-size:13px; color:var(--text); }
-.se-row .unit { font-size:12px; color:var(--text3); }
-.del-btn { padding:7px 9px; border-radius:8px; border:1px solid var(--border2); background:var(--bg); color:var(--text3); cursor:pointer; }
-.se-foot { display:flex; gap:8px; padding:0 12px 12px; }
-.add-row-btn { padding:8px 13px; border-radius:8px; font-size:13px; border:1px solid var(--border2); background:var(--bg); color:var(--text2); cursor:pointer; display:flex; align-items:center; gap:4px; }
-.apply-btn   { padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; border:none; background:var(--accent); color:#fff; cursor:pointer; }
-
-/* 경고 설정 */
-.warn-cfg { padding:10px 12px; display:flex; gap:18px; flex-wrap:wrap; align-items:center; }
-.warn-field { display:flex; align-items:center; gap:7px; font-size:13px; color:var(--text2); }
-.warn-field input { width:50px; padding:6px 7px; border-radius:8px; border:1px solid var(--border2); background:var(--bg); font-size:13px; color:var(--text); }
-
-/* 발송 로그 */
-.msg-log { padding:8px 12px; display:flex; flex-direction:column; gap:5px; max-height:140px; overflow-y:auto; }
-.log-item { font-size:12px; padding:5px 9px; border-radius:7px; border:1px solid var(--border); }
-.log-item.to-chair   { background:#eaf2fb; border-color:#aed6f1; color:#1a4f72; }
-.log-item.to-speaker { background:#fdecea; border-color:#f5b7b1; color:#7b241c; }
-.log-meta { font-size:10px; color:var(--text3); margin-top:2px; }
+.sess-edit{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.se-row{display:flex;gap:6px;align-items:center}
+.se-row input[type=text]{flex:2;min-width:80px;padding:7px 9px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);font-size:13px;color:var(--text)}
+.se-row input[type=text]:focus{outline:none;border-color:var(--accent)}
+.se-row input[type=number]{width:58px;padding:7px 7px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);font-size:13px;color:var(--text)}
+.se-row .unit{font-size:12px;color:var(--text3)}
+.del-btn{padding:7px 9px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text3);cursor:pointer;transition:background .1s}
+.del-btn:active{background:var(--red-light);color:var(--red)}
+.se-foot{display:flex;gap:8px;padding:0 12px 12px}
+.add-row-btn{padding:8px 13px;border-radius:8px;font-size:13px;border:1px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:4px;transition:background .1s}
+.add-row-btn:active{background:var(--bg3)}
+.apply-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;border:none;background:var(--accent);color:#fff;cursor:pointer;transition:opacity .1s,transform .08s}
+.apply-btn:active{opacity:.8;transform:scale(.97)}
+.warn-cfg{padding:10px 12px;display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.warn-field{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--text2)}
+.warn-field input{width:50px;padding:6px 7px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);font-size:13px;color:var(--text)}
 </style>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.34.0/dist/tabler-icons.min.css">
 </head>
 <body>
 
 <!-- ══ 역할 선택 ══ -->
 <div id="pg-select" class="page active">
-  <div class="select-title">CDK Timer</div>
-  <div class="select-sub">역할을 선택하세요</div>
-  <div class="role-cards">
-    <div class="role-card" onclick="chooseRole('admin')">
-      <i class="ti ti-settings rc-icon"></i>
-      <div><div class="rc-name">관리자</div><div class="rc-desc">방 개설 · 세션 설정 · 메시지 발송</div></div>
-      <i class="ti ti-chevron-right rc-arr"></i>
-    </div>
-    <div class="role-card" onclick="chooseRole('chair')">
-      <i class="ti ti-user-check rc-icon"></i>
-      <div><div class="rc-name">좌장</div><div class="rc-desc">타이머 조작 · 메시지 수신</div></div>
-      <i class="ti ti-chevron-right rc-arr"></i>
-    </div>
-    <div class="role-card" onclick="chooseRole('speaker')">
-      <i class="ti ti-microphone rc-icon"></i>
-      <div><div class="rc-name">연자</div><div class="rc-desc">타이머 표시 · 메시지 수신</div></div>
-      <i class="ti ti-chevron-right rc-arr"></i>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:24px">
+    <div><div class="sel-title">CDK Timer</div><div class="sel-sub">역할을 선택하세요</div></div>
+    <div class="role-cards">
+      <div class="role-card" onclick="chooseRole('admin')">
+        <i class="ti ti-settings rc-icon"></i>
+        <div><div class="rc-name">관리자</div><div class="rc-desc">방 개설 · 세션 설정 · 메시지 발송</div></div>
+        <i class="ti ti-chevron-right rc-arr"></i>
+      </div>
+      <div class="role-card" onclick="chooseRole('chair')">
+        <i class="ti ti-user-check rc-icon"></i>
+        <div><div class="rc-name">좌장</div><div class="rc-desc">타이머 조작 · 메시지 수신</div></div>
+        <i class="ti ti-chevron-right rc-arr"></i>
+      </div>
+      <div class="role-card" onclick="chooseRole('speaker')">
+        <i class="ti ti-microphone rc-icon"></i>
+        <div><div class="rc-name">연자</div><div class="rc-desc">타이머 표시 · 메시지 수신</div></div>
+        <i class="ti ti-chevron-right rc-arr"></i>
+      </div>
     </div>
   </div>
 </div>
@@ -281,33 +199,26 @@ body { font-family: -apple-system,'Helvetica Neue',sans-serif; background:var(--
   <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
     <div class="room-box">
       <h2>방 이름을 입력하세요</h2>
-      <input class="room-input" id="admin-room-input" maxlength="12" placeholder="예: Room1, A홀" style="font-size:20px;letter-spacing:.05em">
-      <div class="room-hint">연자·좌장이 같은 이름을 입력해 연결됩니다</div>
+      <input class="room-input" id="admin-room-input" maxlength="12" placeholder="예: Room1, A홀" onkeydown="if(event.key==='Enter')adminStart()">
+      <div class="room-hint">연자·좌장이 같은 이름으로 입장합니다</div>
       <button class="big-btn" onclick="adminStart()">시작</button>
-      <button class="big-btn secondary" onclick="showPage('pg-select')">← 역할 선택으로</button>
+      <button class="big-btn sec" onclick="showPage('pg-select')">← 역할 선택으로</button>
     </div>
   </div>
 </div>
 
-<!-- ══ 연자/좌장: 방 코드 입력 ══ -->
+<!-- ══ 연자/좌장: 방 이름 입력 ══ -->
 <div id="pg-room-join" class="page">
   <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:24px">
     <div class="room-box">
-      <h2 id="join-title">방 코드 입력</h2>
-      <input class="room-input" id="join-code-input" maxlength="20" placeholder="예: Room1, A홀" style="font-size:20px;letter-spacing:.05em" onkeydown="if(event.key==='Enter')joinRoom()">
+      <h2 id="join-title">방 이름 입력</h2>
+      <input class="room-input" id="join-code-input" maxlength="20" placeholder="예: Room1, A홀" onkeydown="if(event.key==='Enter')joinRoom()">
       <button class="big-btn" onclick="joinRoom()">입장</button>
-      <button class="big-btn secondary" onclick="showPage('pg-select')">← 역할 선택으로</button>
-      <div class="room-hint" id="join-hint">관리자에게 방 코드를 받으세요</div>
+      <button class="big-btn sec" onclick="showPage('pg-select')">← 역할 선택으로</button>
+      <div class="room-hint" id="join-hint">관리자가 방을 먼저 열어야 연결돼요</div>
+      <button class="big-btn sec" id="retry-btn" style="display:none" onclick="joinRoom()">다시 시도</button>
     </div>
   </div>
-</div>
-
-<!-- ══ 연결 대기 ══ -->
-<div id="pg-waiting" class="page">
-  <div class="waiting-code" id="waiting-code" style="font-size:32px;letter-spacing:.06em"></div>
-  <div class="waiting-sub" id="waiting-sub">연자·좌장 연결 대기 중</div>
-  <div class="waiting-dots"><span></span><span></span><span></span></div>
-  <button class="big-btn secondary" style="max-width:200px" onclick="showPage('pg-select');resetPeer()">취소</button>
 </div>
 
 <!-- ══ 연자 화면 ══ -->
@@ -320,8 +231,9 @@ body { font-family: -apple-system,'Helvetica Neue',sans-serif; background:var(--
   <div class="timer-center">
     <div class="timer-display" id="sp-clock">--:--</div>
     <div class="prog-wrap"><div class="prog-fill" id="sp-bar" style="width:100%"></div></div>
+    <div class="mode-badge" id="sp-mode-badge" style="display:none">카운트업</div>
+    <div class="msg-popup" id="sp-popup"></div>
   </div>
-  <div class="msg-popup" id="sp-popup"></div>
 </div>
 
 <!-- ══ 좌장 화면 ══ -->
@@ -334,556 +246,369 @@ body { font-family: -apple-system,'Helvetica Neue',sans-serif; background:var(--
   <div class="timer-center" style="flex:1">
     <div class="timer-display" id="ch-clock">--:--</div>
     <div class="prog-wrap"><div class="prog-fill" id="ch-bar" style="width:100%"></div></div>
+    <div class="mode-badge" id="ch-mode-badge" style="display:none">카운트업</div>
+    <div class="msg-popup" id="ch-popup"></div>
   </div>
   <div class="sess-list" id="ch-sess-list"></div>
   <div class="chair-btns">
-    <button class="ch-btn primary" id="ch-play-btn" onclick="chairAction('togglePlay')">
+    <button class="ch-btn primary" id="ch-play-btn" onclick="chairSend('togglePlay')">
       <i class="ti ti-player-play"></i><span>시작</span>
     </button>
-    <button class="ch-btn" onclick="chairAction('reset')"><i class="ti ti-refresh"></i><span>리셋</span></button>
-    <button class="ch-btn warn-btn" onclick="chairAction('addTime',60)"><i class="ti ti-clock-plus"></i><span>+1분</span></button>
-    <button class="ch-btn" onclick="chairAction('next')"><i class="ti ti-arrow-right"></i><span>다음</span></button>
+    <button class="ch-btn" onclick="chairSend('pause')">
+      <i class="ti ti-player-pause"></i><span>일시정지</span>
+    </button>
+    <button class="ch-btn danger" onclick="chairSend('stop')" style="color:var(--red);border-color:var(--red)">
+      <i class="ti ti-player-stop"></i><span>정지</span>
+    </button>
+    <button class="ch-btn" onclick="chairSend('reset')">
+      <i class="ti ti-refresh"></i><span>리셋</span>
+    </button>
+    <button class="ch-btn" onclick="chairSend('next')">
+      <i class="ti ti-arrow-right"></i><span>다음</span>
+    </button>
   </div>
-  <div class="msg-popup" id="ch-popup"></div>
 </div>
 
 <!-- ══ 관리자 화면 ══ -->
 <div id="pg-admin" class="page">
   <div class="adm-header">
-    <h1>관리자</h1>
-    <span class="badge" id="adm-badge">Room —</span>
+    <h1>CDK Timer</h1>
+    <span class="badge" id="adm-badge">—</span>
     <span><span class="conn-dot" id="adm-dot"></span></span>
   </div>
-  <div class="adm-body">
+  <div class="adm-tabs">
+    <button class="adm-tab active" onclick="switchTab('tab-control',this)">타이머</button>
+    <button class="adm-tab" onclick="switchTab('tab-preview',this)">프리뷰</button>
+    <button class="adm-tab" onclick="switchTab('tab-msg',this)">메시지</button>
+    <button class="adm-tab" onclick="switchTab('tab-session',this)">세션</button>
+  </div>
 
+  <!-- 타이머 탭 -->
+  <div id="tab-control" class="adm-tab-content active">
     <div class="stat-row">
       <div class="stat-card"><div class="stat-label">현재 세션</div><div class="stat-val" id="a-cur">—</div></div>
       <div class="stat-card"><div class="stat-label">남은 시간</div><div class="stat-val" id="a-remain">—</div></div>
       <div class="stat-card"><div class="stat-label">전체 남은</div><div class="stat-val" id="a-total">—</div></div>
     </div>
-
     <div class="adm-card">
-      <div class="adm-card-hd">타이머 제어</div>
-      <div class="ctrl-grid">
-        <button class="ctrl-btn primary" id="adm-play-btn" onclick="adminControl('togglePlay')"><i class="ti ti-player-play"></i>시작</button>
-        <button class="ctrl-btn" onclick="adminControl('reset')"><i class="ti ti-refresh"></i>리셋</button>
-        <button class="ctrl-btn" onclick="adminControl('next')"><i class="ti ti-arrow-right"></i>다음</button>
-        <button class="ctrl-btn warn-c" onclick="adminControl('addTime',60)"><i class="ti ti-clock-plus"></i>+1분</button>
-        <button class="ctrl-btn warn-c" onclick="adminControl('addTime',180)"><i class="ti ti-clock-plus"></i>+3분</button>
-        <button class="ctrl-btn warn-c" onclick="adminControl('addTime',-60)"><i class="ti ti-clock-minus"></i>-1분</button>
-        <button class="ctrl-btn warn-c" onclick="adminControl('addTime',-180)"><i class="ti ti-clock-minus"></i>-3분</button>
-        <button class="ctrl-btn" onclick="adminControl('pause')"><i class="ti ti-player-pause"></i>정지</button>
+      <div class="adm-card-hd">타이머 모드</div>
+      <div class="mode-toggle">
+        <button class="mode-btn-t active" id="mode-down" onclick="setMode('down')">⏬ 카운트다운</button>
+        <button class="mode-btn-t" id="mode-up" onclick="setMode('up')">⏫ 카운트업</button>
       </div>
     </div>
+    <div class="adm-card">
+      <div class="adm-card-hd">타이머 제어</div>
+      <div class="ctrl-4">
+        <button class="ctrl-btn primary" id="adm-play-btn" onclick="adminCtrl('togglePlay')">
+          <i class="ti ti-player-play"></i>시작
+        </button>
+        <button class="ctrl-btn" onclick="adminCtrl('pause')">
+          <i class="ti ti-player-pause"></i>일시정지
+        </button>
+        <button class="ctrl-btn danger" onclick="adminCtrl('stop')">
+          <i class="ti ti-player-stop"></i>정지
+        </button>
+        <button class="ctrl-btn" onclick="adminCtrl('reset')">
+          <i class="ti ti-refresh"></i>리셋
+        </button>
+      </div>
+      <div class="adm-card-hd" style="border-top:1px solid var(--border)">시간 조정</div>
+      <div class="time-adj">
+        <button class="adj-btn" onclick="adminCtrl('addTime',180)">+3분</button>
+        <button class="adj-btn" onclick="adminCtrl('addTime',60)">+1분</button>
+        <button class="adj-btn" onclick="adminCtrl('addTime',-60)">-1분</button>
+        <button class="adj-btn" onclick="adminCtrl('addTime',-180)">-3분</button>
+      </div>
+    </div>
+    <div class="adm-card">
+      <div class="adm-card-hd">세션 이동</div>
+      <div class="sess-list" id="adm-sess-list" style="max-height:200px"></div>
+    </div>
+  </div>
 
+  <!-- 프리뷰 탭 -->
+  <div id="tab-preview" class="adm-tab-content">
+    <div class="preview-wrap">
+      <div class="preview-card">
+        <div class="preview-label">연자 화면</div>
+        <div class="preview-body">
+          <div class="preview-clock" id="pv-sp-clock">--:--</div>
+          <div class="preview-prog"><div class="preview-prog-fill" id="pv-sp-bar" style="width:100%"></div></div>
+          <div class="preview-sess" id="pv-sp-sess">—</div>
+          <div class="preview-msg" id="pv-sp-msg">메시지 없음</div>
+        </div>
+      </div>
+      <div class="preview-card">
+        <div class="preview-label">좌장 화면</div>
+        <div class="preview-body">
+          <div class="preview-clock" id="pv-ch-clock">--:--</div>
+          <div class="preview-prog"><div class="preview-prog-fill" id="pv-ch-bar" style="width:100%"></div></div>
+          <div class="preview-sess" id="pv-ch-sess">—</div>
+          <div class="preview-msg" id="pv-ch-msg">메시지 없음</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);text-align:center">연자·좌장 화면을 실시간으로 미리 확인합니다</div>
+  </div>
+
+  <!-- 메시지 탭 -->
+  <div id="tab-msg" class="adm-tab-content">
     <div class="adm-card">
       <div class="adm-card-hd">메시지 발송</div>
       <div class="msg-panel">
         <div class="msg-target">→ 좌장</div>
         <div class="preset-row">
-          <button class="preset-btn chair-p" onclick="sendMsg('chair','디스커션 5분 남았습니다')">디스커션 5분</button>
-          <button class="preset-btn chair-p" onclick="sendMsg('chair','디스커션 1분 남았습니다')">디스커션 1분</button>
-          <button class="preset-btn chair-p" onclick="sendMsg('chair','마무리 해주세요')">마무리 요청</button>
-          <button class="preset-btn chair-p" onclick="sendMsg('chair','다음 발표 준비해주세요')">다음 준비</button>
+          <button class="preset-btn cp" onclick="sendMsg('chair','디스커션 5분 남았습니다')">디스커션 5분</button>
+          <button class="preset-btn cp" onclick="sendMsg('chair','디스커션 1분 남았습니다')">디스커션 1분</button>
+          <button class="preset-btn cp" onclick="sendMsg('chair','마무리 해주세요')">마무리 요청</button>
+          <button class="preset-btn cp" onclick="sendMsg('chair','다음 발표 준비해주세요')">다음 준비</button>
         </div>
         <div class="custom-row">
           <input type="text" id="ci-chair" placeholder="좌장에게 직접 입력..." onkeydown="if(event.key==='Enter')sendCustom('chair')">
-          <button class="send-btn chair-s" onclick="sendCustom('chair')"><i class="ti ti-send"></i></button>
+          <button class="send-btn cs" onclick="sendCustom('chair')"><i class="ti ti-send"></i></button>
         </div>
-        <div class="msg-target" style="margin-top:6px">→ 연자</div>
+        <div class="msg-target" style="margin-top:8px">→ 연자</div>
         <div class="preset-row">
-          <button class="preset-btn speaker-p" onclick="sendMsg('speaker','시간이 초과됐습니다')">시간 초과</button>
-          <button class="preset-btn speaker-p" onclick="sendMsg('speaker','3분 남았습니다')">3분 남음</button>
-          <button class="preset-btn speaker-p" onclick="sendMsg('speaker','1분 남았습니다')">1분 남음</button>
-          <button class="preset-btn speaker-p" onclick="sendMsg('speaker','마무리 해주세요')">마무리 요청</button>
+          <button class="preset-btn sp" onclick="sendMsg('speaker','시간이 초과됐습니다')">시간 초과</button>
+          <button class="preset-btn sp" onclick="sendMsg('speaker','3분 남았습니다')">3분 남음</button>
+          <button class="preset-btn sp" onclick="sendMsg('speaker','1분 남았습니다')">1분 남음</button>
+          <button class="preset-btn sp" onclick="sendMsg('speaker','마무리 해주세요')">마무리 요청</button>
         </div>
         <div class="custom-row">
           <input type="text" id="ci-speaker" placeholder="연자에게 직접 입력..." onkeydown="if(event.key==='Enter')sendCustom('speaker')">
-          <button class="send-btn speaker-s" onclick="sendCustom('speaker')"><i class="ti ti-send"></i></button>
+          <button class="send-btn ss" onclick="sendCustom('speaker')"><i class="ti ti-send"></i></button>
         </div>
       </div>
-      <div class="adm-card-hd">발송 로그</div>
+      <div class="adm-card-hd" style="border-top:1px solid var(--border)">발송 로그</div>
       <div class="msg-log" id="msg-log"></div>
     </div>
+  </div>
 
+  <!-- 세션 탭 -->
+  <div id="tab-session" class="adm-tab-content">
     <div class="adm-card">
-      <div class="adm-card-hd">세션 목록 편집</div>
+      <div class="adm-card-hd">세션 목록</div>
       <div class="sess-edit" id="sess-edit-rows"></div>
       <div class="se-foot">
         <button class="add-row-btn" onclick="addSessRow()"><i class="ti ti-plus"></i> 추가</button>
         <button class="apply-btn" onclick="applySessions()">적용</button>
       </div>
     </div>
-
     <div class="adm-card">
-      <div class="adm-card-hd">경고 타이밍</div>
+      <div class="adm-card-hd">경고 타이밍 (카운트다운)</div>
       <div class="warn-cfg">
         <div class="warn-field">🟡 <input type="number" id="wy" value="5" min="1" max="30"> 분 전</div>
         <div class="warn-field">🔴 <input type="number" id="wr" value="1" min="1" max="10"> 분 전</div>
         <button class="apply-btn" onclick="applySessions()">적용</button>
       </div>
     </div>
-
   </div>
 </div>
 
 <script>
-// ══════════════════════════════════════════════
-//  상태
-// ══════════════════════════════════════════════
-let MY_ROLE = null;   // admin | chair | speaker
-let peer    = null;
-let conns   = [];     // admin → [chair conn, speaker conn, ...]
-let adminConn = null; // chair/speaker → admin conn
+// ══ 상태 ══
+let MY_ROLE=null, peer=null, conns=[], adminConn=null;
+let ticker=null, sessEditDirty=false;
+let lastMsg={speaker:'',chair:''};
+let popTimers={};
 
-let state = {
-  sessions:   [{name:'세션 1',mins:20},{name:'세션 2',mins:15}],
-  curIdx:     0,
-  secsLeft:   20*60,
-  running:    false,
-  warnYellow: 5,
-  warnRed:    1,
+let S={
+  sessions:[{name:'세션 1',mins:20},{name:'세션 2',mins:15}],
+  curIdx:0, secsLeft:20*60, countUp:0,
+  running:false, mode:'down',
+  warnYellow:5, warnRed:1,
 };
-let ticker    = null;
-let popTimer  = null;
-let sessEditDirty = false;
 
-// ══════════════════════════════════════════════
-//  유틸
-// ══════════════════════════════════════════════
-function fmt(s) {
-  const sign = s < 0 ? '-' : '';
-  const a = Math.abs(Math.round(s));
-  return sign + String(Math.floor(a/60)).padStart(2,'0') + ':' + String(a%60).padStart(2,'0');
-}
-function warnCls(s) {
-  if (s < 0) return 'over';
-  if (s <= state.warnRed*60) return 'danger';
-  if (s <= state.warnYellow*60) return 'warn';
-  return '';
-}
-function pct() {
-  const total = (state.sessions[state.curIdx]?.mins || 1) * 60;
-  return Math.max(0, Math.min(100, state.secsLeft / total * 100));
-}
-function randCode() {
-  return Math.random().toString(36).substring(2,6).toUpperCase();
-}
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+const PEER_CFG={
+  host:'0.peerjs.com',port:443,secure:true,path:'/',
+  config:{iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]}
+};
+
+// ══ 유틸 ══
+const fmt=s=>{const sign=s<0?'-':'';const a=Math.abs(Math.round(s));return sign+String(Math.floor(a/60)).padStart(2,'0')+':'+String(a%60).padStart(2,'0')};
+function warnCls(s){if(S.mode==='up')return 'up';if(s<0)return 'over';if(s<=S.warnRed*60)return 'danger';if(s<=S.warnYellow*60)return 'warn';return ''}
+function pct(){if(S.mode==='up')return 100;const t=(S.sessions[S.curIdx]?.mins||1)*60;return Math.max(0,Math.min(100,S.secsLeft/t*100))}
+function dispTime(){return S.mode==='up'?fmt(S.countUp):fmt(S.secsLeft)}
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function switchTab(id,btn){document.querySelectorAll('.adm-tab-content').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.adm-tab').forEach(b=>b.classList.remove('active'));document.getElementById(id).classList.add('active');btn.classList.add('active')}
+function setEl(id,txt,cls){const e=document.getElementById(id);if(!e)return;e.textContent=txt;if(cls!==undefined)e.className=cls}
+function setBar(id,p,cls){const e=document.getElementById(id);if(e){e.style.width=p;e.className=cls}}
+
+// ══ 역할 / 방 ══
+function chooseRole(r){MY_ROLE=r;if(r==='admin'){showPage('pg-room-admin');setTimeout(()=>document.getElementById('admin-room-input').focus(),150)}else{document.getElementById('join-title').textContent=r==='chair'?'좌장 — 방 이름 입력':'연자 — 방 이름 입력';showPage('pg-room-join');setTimeout(()=>document.getElementById('join-code-input').focus(),150)}}
+
+function adminStart(){
+  const raw=document.getElementById('admin-room-input').value.trim();
+  if(!raw){alert('방 이름을 입력해주세요');return}
+  const rid='CDK-'+raw.replace(/\s+/g,'-');
+  document.getElementById('adm-badge').textContent=raw;
+  showPage('pg-admin');renderAdminSessEdit();renderAll();initPeer(rid);
 }
 
-// ══════════════════════════════════════════════
-//  역할 선택
-// ══════════════════════════════════════════════
-function chooseRole(role) {
-  MY_ROLE = role;
-  if (role === 'admin') {
-    showPage('pg-room-admin');
-    setTimeout(() => document.getElementById('admin-room-input').focus(), 100);
-  } else {
-    document.getElementById('join-title').textContent =
-      role === 'chair' ? '좌장 — 방 이름 입력' : '연자 — 방 이름 입력';
-    document.getElementById('join-hint').textContent = '관리자가 설정한 방 이름을 입력하세요';
-    showPage('pg-room-join');
-  }
+function joinRoom(){
+  const raw=document.getElementById('join-code-input').value.trim();
+  if(!raw){document.getElementById('join-hint').textContent='방 이름을 입력해주세요';return}
+  document.getElementById('join-hint').textContent='연결 중...';
+  document.getElementById('retry-btn').style.display='none';
+  initPeerAndConnect('CDK-'+raw.replace(/\s+/g,'-'));
 }
 
-function adminStart() {
-  const raw = document.getElementById('admin-room-input').value.trim();
-  if (!raw) {
-    alert('방 이름을 입력해주세요');
-    return;
-  }
-  const roomId = 'CDK-' + raw.replace(/\s+/g, '-');
-  document.getElementById('waiting-code').textContent = raw;
-  showPage('pg-waiting');
-  initPeer(roomId);
-  renderAdminSessEdit();
+// ══ PeerJS ══
+function initPeer(myId){
+  resetPeer();peer=new Peer(myId,PEER_CFG);
+  peer.on('open',id=>console.log('open:',id));
+  peer.on('connection',conn=>setupConn(conn));
+  peer.on('error',e=>{console.error('peer err:',e.type);if(e.type==='unavailable-id')initPeer(myId+'-'+Math.random().toString(36).substring(2,4))});
 }
-
-function joinRoom() {
-  const raw = document.getElementById('join-code-input').value.trim();
-  if (!raw) {
-    document.getElementById('join-hint').textContent = '방 이름을 입력해주세요';
-    return;
-  }
-  const peerId = 'CDK-' + raw.replace(/\s+/g, '-');
-  initPeerAndConnect(peerId);
+function initPeerAndConnect(tid){
+  resetPeer();peer=new Peer(PEER_CFG);
+  peer.on('open',()=>{const c=peer.connect(tid,{reliable:true,serialization:'json'});adminConn=c;setupConn(c)});
+  peer.on('error',e=>{console.error('join err:',e.type);document.getElementById('join-hint').textContent='연결 실패 — 방 이름을 확인하거나 관리자가 먼저 열었는지 확인하세요';document.getElementById('retry-btn').style.display='block';showPage('pg-room-join')});
 }
-
-// ══════════════════════════════════════════════
-//  PeerJS
-// ══════════════════════════════════════════════
-function initPeer(myId) {
-  resetPeer();
-  peer = myId
-    ? new Peer(myId)
-    : new Peer();
-
-  peer.on('open', id => {
-    console.log('Peer open:', id);
-    if (MY_ROLE === 'admin') {
-      document.getElementById('waiting-code').textContent = id.replace('CDK-','');
-    }
+function setupConn(conn){
+  let to=setTimeout(()=>{if(!conn.open){document.getElementById('join-hint').textContent='연결 시간 초과 — 다시 시도해주세요';document.getElementById('retry-btn').style.display='block';showPage('pg-room-join')}},12000);
+  conn.on('open',()=>{
+    clearTimeout(to);
+    if(MY_ROLE==='admin'){conn._role=null;conns.push(conn);dot('adm-dot',true);sendC(conn,{type:'init',state:S});renderAll()}
+    else{adminConn=conn;sendC(conn,{type:'register',role:MY_ROLE});dot(MY_ROLE==='chair'?'ch-dot':'sp-dot',true);showPage(MY_ROLE==='chair'?'pg-chair':'pg-speaker')}
   });
+  conn.on('data',d=>handleData(conn,d));
+  conn.on('close',()=>{clearTimeout(to);if(MY_ROLE==='admin'){conns=conns.filter(c=>c!==conn);dot('adm-dot',conns.length>0)}else{dot(MY_ROLE==='chair'?'ch-dot':'sp-dot',false);setTimeout(()=>adminConn&&!adminConn.open&&initPeerAndConnect(adminConn.peer),3000)}});
+  conn.on('error',e=>{clearTimeout(to);console.error('conn err:',e)});
+}
+function sendC(conn,data){try{if(conn&&conn.open)conn.send(data)}catch(e){}}
+function bcast(){const p={type:'state',state:S};conns.forEach(c=>sendC(c,p))}
+function toAdmin(d){sendC(adminConn,d)}
+function resetPeer(){if(peer){try{peer.destroy()}catch(e){}peer=null}conns=[];adminConn=null;stopTicker()}
+function dot(id,ok){const e=document.getElementById(id);if(e)e.className='conn-dot '+(ok?'ok':'err')}
 
-  peer.on('connection', conn => {
-    setupConn(conn);
-  });
-
-  peer.on('error', e => {
-    console.error('Peer error:', e);
-    if (MY_ROLE !== 'admin') {
-      document.getElementById('join-hint').textContent = '연결 실패 — 코드를 확인하세요';
-      showPage('pg-room-join');
-    }
-  });
+// ══ 데이터 수신 ══
+function handleData(conn,data){
+  if(!data||!data.type)return;
+  if(MY_ROLE==='admin'){if(data.type==='control'){applyCtrl(data);bcast();renderAll()}if(data.type==='register')conn._role=data.role;return}
+  if(data.type==='init'||data.type==='state'){S={...S,...data.state};renderAll()}
+  if(data.type==='message')showPopup(data.text);
 }
 
-function initPeerAndConnect(targetId) {
-  resetPeer();
-  peer = new Peer();
-  peer.on('open', () => {
-    const conn = peer.connect(targetId, {reliable:true});
-    adminConn = conn;
-    setupConn(conn);
-  });
-  peer.on('error', e => {
-    document.getElementById('join-hint').textContent = '연결 실패 — 방 이름을 확인하거나 관리자가 먼저 열었는지 확인하세요';
-    showPage('pg-room-join');
-  });
+// ══ 타이머 ══
+function startTicker(){if(ticker)return;ticker=setInterval(()=>{S.mode==='down'?S.secsLeft--:S.countUp++;bcast();renderAll()},1000)}
+function stopTicker(){if(ticker){clearInterval(ticker);ticker=null}}
+
+function applyCtrl(cmd){
+  const{action,secs,idx,sessions,warnYellow,warnRed,mode}=cmd;
+  if(action==='togglePlay'){S.running=!S.running;S.running?startTicker():stopTicker()}
+  else if(action==='pause'){S.running=false;stopTicker()}
+  else if(action==='stop'){S.running=false;stopTicker();S.secsLeft=0;S.countUp=0}
+  else if(action==='reset'){S.running=false;stopTicker();S.secsLeft=(S.sessions[S.curIdx]?.mins||0)*60;S.countUp=0}
+  else if(action==='next'){if(S.curIdx+1<S.sessions.length){S.curIdx++;S.secsLeft=S.sessions[S.curIdx].mins*60;S.countUp=0;S.running=false;stopTicker()}}
+  else if(action==='jump'){S.curIdx=idx;S.secsLeft=S.sessions[idx].mins*60;S.countUp=0;S.running=false;stopTicker()}
+  else if(action==='addTime'){S.secsLeft=Math.max(0,S.secsLeft+secs)}
+  else if(action==='setMode'){S.mode=mode;S.running=false;stopTicker();S.secsLeft=(S.sessions[S.curIdx]?.mins||0)*60;S.countUp=0}
+  else if(action==='updateSessions'){S.sessions=sessions;S.warnYellow=warnYellow;S.warnRed=warnRed;if(S.curIdx>=S.sessions.length)S.curIdx=0;S.secsLeft=S.sessions[S.curIdx].mins*60;S.countUp=0;S.running=false;stopTicker();sessEditDirty=false}
 }
 
-function setupConn(conn) {
-  conn.on('open', () => {
-    if (MY_ROLE === 'admin') {
-      conns.push(conn);
-      updateConnDot('adm-dot', true);
-      // 접속 즉시 현재 상태 전송
-      sendToConn(conn, {type:'init', state});
-      // 대기 화면이면 관리자 화면으로
-      const cur = document.querySelector('.page.active');
-      if (cur && cur.id === 'pg-waiting') {
-        showPage('pg-admin');
-        renderAdminSessEdit();
-        renderAll();
-      }
-    } else {
-      adminConn = conn;
-      updateConnDot(MY_ROLE === 'chair' ? 'ch-dot' : 'sp-dot', true);
-      showPage(MY_ROLE === 'chair' ? 'pg-chair' : 'pg-speaker');
-    }
-  });
+function adminCtrl(action,secs,idx){applyCtrl({action,secs,idx});renderAll();bcast()}
+function setMode(m){applyCtrl({action:'setMode',mode:m});document.getElementById('mode-down').classList.toggle('active',m==='down');document.getElementById('mode-up').classList.toggle('active',m==='up');renderAll();bcast()}
+function chairSend(action,secs){toAdmin({type:'control',action,secs})}
 
-  conn.on('data', data => {
-    handleData(conn, data);
-  });
-
-  conn.on('close', () => {
-    if (MY_ROLE === 'admin') {
-      conns = conns.filter(c => c !== conn);
-      updateConnDot('adm-dot', conns.length > 0);
-    } else {
-      updateConnDot(MY_ROLE === 'chair' ? 'ch-dot' : 'sp-dot', false);
-    }
-  });
+// ══ 메시지 ══
+function sendMsg(to,text){
+  conns.forEach(c=>{if(!c._role||c._role===to)sendC(c,{type:'message',to,text})});
+  lastMsg[to]=text;
+  const pvId=to==='chair'?'pv-ch-msg':'pv-sp-msg';
+  const pvEl=document.getElementById(pvId);
+  if(pvEl){pvEl.textContent=text;pvEl.style.color=to==='chair'?'#1a4f72':'#7b241c'}
+  appendLog({to,text});
 }
+function sendCustom(to){const el=document.getElementById(to==='chair'?'ci-chair':'ci-speaker');const t=el.value.trim();if(!t)return;sendMsg(to,t);el.value=''}
+function appendLog(msg){const log=document.getElementById('msg-log');if(!log)return;const item=document.createElement('div');item.className='log-item '+(msg.to==='chair'?'lc':'ls');item.innerHTML=`→ ${msg.to==='chair'?'좌장':'연자'}: ${msg.text}<div class="log-meta">${new Date().toLocaleTimeString('ko-KR')}</div>`;log.prepend(item);while(log.children.length>20)log.removeChild(log.lastChild)}
+function showPopup(text){const id=MY_ROLE==='chair'?'ch-popup':'sp-popup';const el=document.getElementById(id);if(!el)return;el.textContent=text;el.classList.add('show');clearTimeout(popTimers[id]);popTimers[id]=setTimeout(()=>el.classList.remove('show'),8000)}
 
-function sendToConn(conn, data) {
-  try { if (conn.open) conn.send(data); } catch(e) {}
-}
-
-function broadcast(data, onlyRole) {
-  conns.forEach(c => {
-    if (onlyRole && c.peer && !c.peer.toLowerCase().includes(onlyRole)) {
-      // role 필터링은 metadata 기반으로 처리
-    }
-    sendToConn(c, data);
-  });
-}
-
-function sendToAdmin(data) {
-  if (adminConn) sendToConn(adminConn, data);
-}
-
-function resetPeer() {
-  if (peer) { try { peer.destroy(); } catch(e) {} peer = null; }
-  conns = []; adminConn = null;
-  stopTicker();
-}
-
-function updateConnDot(id, ok) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.className = 'conn-dot ' + (ok ? 'ok' : 'err');
-}
-
-// ══════════════════════════════════════════════
-//  데이터 수신 처리
-// ══════════════════════════════════════════════
-function handleData(conn, data) {
-  if (!data || !data.type) return;
-
-  if (MY_ROLE === 'admin') {
-    // 좌장이 보내는 제어 명령
-    if (data.type === 'control') {
-      applyControl(data);
-      broadcastState();
-    }
-    // role 등록
-    if (data.type === 'register') {
-      conn._role = data.role;
-    }
-    return;
-  }
-
-  // 연자/좌장 수신
-  if (data.type === 'init' || data.type === 'state') {
-    state = data.state;
-    renderAll();
-  }
-  if (data.type === 'message') {
-    showPopup(data.text);
-  }
-}
-
-// ══════════════════════════════════════════════
-//  타이머 로직 (관리자 로컬에서 실행)
-// ══════════════════════════════════════════════
-function startTicker() {
-  if (ticker) return;
-  ticker = setInterval(() => {
-    state.secsLeft--;
-    renderAll();
-    broadcastState();
-  }, 1000);
-}
-
-function stopTicker() {
-  if (ticker) { clearInterval(ticker); ticker = null; }
-}
-
-function broadcastState() {
-  const pkg = {type:'state', state};
-  conns.forEach(c => sendToConn(c, pkg));
-}
-
-function applyControl(cmd) {
-  if (cmd.action === 'togglePlay') {
-    state.running = !state.running;
-    state.running ? startTicker() : stopTicker();
-  } else if (cmd.action === 'pause') {
-    state.running = false; stopTicker();
-  } else if (cmd.action === 'reset') {
-    state.running = false; stopTicker();
-    state.secsLeft = state.sessions[state.curIdx].mins * 60;
-  } else if (cmd.action === 'next') {
-    if (state.curIdx + 1 < state.sessions.length) {
-      state.curIdx++;
-      state.secsLeft = state.sessions[state.curIdx].mins * 60;
-      state.running = false; stopTicker();
-    }
-  } else if (cmd.action === 'jump') {
-    state.curIdx = cmd.idx;
-    state.secsLeft = state.sessions[cmd.idx].mins * 60;
-    state.running = false; stopTicker();
-  } else if (cmd.action === 'addTime') {
-    state.secsLeft += cmd.secs;
-  } else if (cmd.action === 'updateSessions') {
-    state.sessions = cmd.sessions;
-    state.warnYellow = cmd.warnYellow;
-    state.warnRed = cmd.warnRed;
-    if (state.curIdx >= state.sessions.length) state.curIdx = 0;
-    state.secsLeft = state.sessions[state.curIdx].mins * 60;
-    state.running = false; stopTicker();
-    sessEditDirty = false;
-  }
-}
-
-// ══════════════════════════════════════════════
-//  관리자 제어
-// ══════════════════════════════════════════════
-function adminControl(action, secs) {
-  applyControl({action, secs});
-  renderAll();
-  broadcastState();
-}
-
-function chairAction(action, secs) {
-  sendToAdmin({type:'control', action, secs});
-  // 로컬에서도 즉시 반영 (관리자가 echo 보내기 전 체감 향상)
-}
-
-// ══════════════════════════════════════════════
-//  메시지 발송
-// ══════════════════════════════════════════════
-function sendMsg(to, text) {
-  const pkg = {type:'message', to, text};
-  // 해당 role의 conn에만 전송 (role 태그 기반)
-  conns.forEach(c => {
-    if (!c._role || c._role === to) sendToConn(c, pkg);
-  });
-  appendLog({to, text});
-}
-
-function sendCustom(to) {
-  const id = to === 'chair' ? 'ci-chair' : 'ci-speaker';
-  const el  = document.getElementById(id);
-  const txt = el.value.trim();
-  if (!txt) return;
-  sendMsg(to, txt);
-  el.value = '';
-}
-
-function appendLog(msg) {
-  const log = document.getElementById('msg-log');
-  if (!log) return;
-  const item = document.createElement('div');
-  const toLabel = msg.to === 'chair' ? '좌장' : '연자';
-  item.className = `log-item to-${msg.to}`;
-  item.innerHTML = `→ ${toLabel}: ${msg.text}<div class="log-meta">${new Date().toLocaleTimeString('ko-KR')}</div>`;
-  log.prepend(item);
-  while (log.children.length > 20) log.removeChild(log.lastChild);
-}
-
-// ══════════════════════════════════════════════
-//  팝업
-// ══════════════════════════════════════════════
-function showPopup(text) {
-  const id = MY_ROLE === 'chair' ? 'ch-popup' : 'sp-popup';
-  const el  = document.getElementById(id);
-  if (!el) return;
-  el.textContent = text;
-  el.classList.add('show');
-  clearTimeout(popTimer);
-  popTimer = setTimeout(() => el.classList.remove('show'), 8000);
-}
-
-// ══════════════════════════════════════════════
-//  렌더링
-// ══════════════════════════════════════════════
-function renderAll() {
-  const sc      = warnCls(state.secsLeft);
-  const timeStr = fmt(state.secsLeft);
-  const barPct  = pct() + '%';
-  const barCls  = 'prog-fill' + (sc ? ' '+sc : '');
-  const cur     = state.sessions[state.curIdx] || {name:'—',mins:0};
-  const nxt     = state.sessions[state.curIdx+1];
-  const nextHint = nxt ? '다음: ' + nxt.name : '마지막 세션';
+// ══ 렌더 ══
+function renderAll(){
+  const sc=warnCls(S.secsLeft);
+  const t=dispTime();
+  const bp=pct()+'%';
+  const bCls='prog-fill'+(sc?' '+sc:'');
+  const pvBCls='preview-prog-fill'+(sc?' '+sc:'');
+  const cur=S.sessions[S.curIdx]||{name:'—',mins:0};
+  const nxt=S.sessions[S.curIdx+1];
+  const nh=nxt?'다음: '+nxt.name:'마지막 세션';
+  const isUp=S.mode==='up';
 
   // 연자
-  setText('sp-name', cur.name); setText('sp-next', nextHint);
-  setTimer('sp-clock', sc, timeStr);
-  setBar('sp-bar', barPct, barCls);
+  setEl('sp-clock',t,'timer-display '+sc);setEl('sp-name',cur.name);setEl('sp-next',nh);
+  setBar('sp-bar',bp,bCls);
+  const spBadge=document.getElementById('sp-mode-badge');if(spBadge){spBadge.style.display=isUp?'block':'none'}
 
   // 좌장
-  setText('ch-name', cur.name); setText('ch-next', nextHint);
-  setTimer('ch-clock', sc, timeStr);
-  setBar('ch-bar', barPct, barCls);
-  renderChairSess();
-  updatePlayBtn('ch-play-btn', state.running, true);
+  setEl('ch-clock',t,'timer-display '+sc);setEl('ch-name',cur.name);setEl('ch-next',nh);
+  setBar('ch-bar',bp,bCls);
+  const chBadge=document.getElementById('ch-mode-badge');if(chBadge){chBadge.style.display=isUp?'block':'none'}
+  renderSessList('ch-sess-list',true);
 
-  // 관리자
-  renderAdminStats(timeStr);
-  if (!sessEditDirty) renderAdminSessEdit();
-  updatePlayBtn('adm-play-btn', state.running, false);
-}
+  // 관리자 통계
+  const totalLeft=S.secsLeft+S.sessions.slice(S.curIdx+1).reduce((a,s)=>a+s.mins*60,0);
+  setEl('a-cur',(S.curIdx+1)+' / '+S.sessions.length);
+  setEl('a-remain',t);setEl('a-total',fmt(totalLeft));
+  renderSessList('adm-sess-list',false);
 
-function setText(id, val) { const e=document.getElementById(id); if(e) e.textContent=val; }
-function setTimer(id, sc, val) {
-  const e = document.getElementById(id);
-  if (e) { e.textContent = val; e.className = 'timer-display ' + sc; }
-}
-function setBar(id, pct, cls) {
-  const e = document.getElementById(id);
-  if (e) { e.style.width = pct; e.className = cls; }
-}
-function updatePlayBtn(id, running, isChair) {
-  const btn = document.getElementById(id);
-  if (!btn) return;
-  btn.innerHTML = running
-    ? '<i class="ti ti-player-pause"></i>' + (isChair ? '<span>정지</span>' : '정지')
-    : '<i class="ti ti-player-play"></i>'  + (isChair ? '<span>시작</span>' : '시작');
+  // 재생 버튼
+  const admBtn=document.getElementById('adm-play-btn');
+  if(admBtn){admBtn.innerHTML=S.running?'<i class="ti ti-player-pause"></i>일시정지':'<i class="ti ti-player-play"></i>시작'}
+  const chBtn=document.getElementById('ch-play-btn');
+  if(chBtn){chBtn.innerHTML=S.running?'<i class="ti ti-player-pause"></i><span>일시정지</span>':'<i class="ti ti-player-play"></i><span>시작</span>'}
+
+  // 프리뷰
+  setEl('pv-sp-clock',t,'preview-clock '+sc);setEl('pv-ch-clock',t,'preview-clock '+sc);
+  setBar('pv-sp-bar',bp,pvBCls);setBar('pv-ch-bar',bp,pvBCls);
+  const sessInfo=cur.name+(nxt?' → '+nxt.name:'');
+  setEl('pv-sp-sess',sessInfo);setEl('pv-ch-sess',sessInfo);
+
+  if(!sessEditDirty)renderAdminSessEdit();
 }
 
-function renderChairSess() {
-  const el = document.getElementById('ch-sess-list');
-  if (!el) return;
-  el.innerHTML = state.sessions.map((s,i) => {
-    const rc = i < state.curIdx ? 'sess-row done' : i===state.curIdx ? 'sess-row active' : 'sess-row';
-    const dc = i < state.curIdx ? 's-dot done' : i===state.curIdx ? 's-dot active' : 's-dot';
-    return `<div class="${rc}" onclick="chairAction('jump');sendToAdmin({type:'control',action:'jump',idx:${i}})">
-      <span class="${dc}"></span><span class="s-name">${s.name}</span><span class="s-dur">${s.mins}분</span>
-    </div>`;
+function renderSessList(elId,isChair){
+  const el=document.getElementById(elId);if(!el)return;
+  el.innerHTML=S.sessions.map((s,i)=>{
+    const rc=i<S.curIdx?'sess-row done':i===S.curIdx?'sess-row active':'sess-row';
+    const dc=i<S.curIdx?'s-dot done':i===S.curIdx?'s-dot active':'s-dot';
+    const oc=isChair?`toAdmin({type:'control',action:'jump',idx:${i}})`:`adminCtrl('jump',0,${i})`;
+    return `<div class="${rc}" onclick="${oc}"><span class="${dc}"></span><span class="s-name">${s.name}</span><span class="s-dur">${s.mins}분</span></div>`;
   }).join('');
 }
 
-function renderAdminStats(timeStr) {
-  const totalLeft = state.secsLeft +
-    state.sessions.slice(state.curIdx+1).reduce((a,s)=>a+s.mins*60,0);
-  setText('a-cur',    (state.curIdx+1)+' / '+state.sessions.length);
-  setText('a-remain', timeStr);
-  setText('a-total',  fmt(totalLeft));
-  setText('adm-badge', (peer?.id || '').replace('CDK-','').replace(/-/g,' '));
-}
-
-function renderAdminSessEdit() {
-  const el = document.getElementById('sess-edit-rows');
-  if (!el) return;
-  el.innerHTML = state.sessions.map((s,i) => `
+function renderAdminSessEdit(){
+  const el=document.getElementById('sess-edit-rows');if(!el)return;
+  el.innerHTML=S.sessions.map((s,i)=>`
     <div class="se-row">
-      <input type="text"   id="sn${i}" value="${s.name}">
-      <input type="number" id="sm${i}" value="${s.mins}" min="1" max="300">
+      <input type="text" id="sn${i}" value="${s.name}" oninput="sessEditDirty=true">
+      <input type="number" id="sm${i}" value="${s.mins}" min="1" max="300" oninput="sessEditDirty=true">
       <span class="unit">분</span>
       <button class="del-btn" onclick="delSessRow(${i})"><i class="ti ti-trash"></i></button>
     </div>`).join('');
-  document.getElementById('wy').value = state.warnYellow;
-  document.getElementById('wr').value = state.warnRed;
+  if(!sessEditDirty){const wy=document.getElementById('wy');const wr=document.getElementById('wr');if(wy)wy.value=S.warnYellow;if(wr)wr.value=S.warnRed}
 }
 
-function addSessRow() {
-  sessEditDirty = true;
-  const el = document.getElementById('sess-edit-rows');
-  const i  = el.querySelectorAll('.se-row').length;
-  const row = document.createElement('div');
-  row.className = 'se-row';
-  row.innerHTML = `
-    <input type="text"   id="sn${i}" value="새 세션">
-    <input type="number" id="sm${i}" value="15" min="1" max="300">
-    <span class="unit">분</span>
-    <button class="del-btn" onclick="this.closest('.se-row').remove()"><i class="ti ti-trash"></i></button>`;
+function addSessRow(){
+  sessEditDirty=true;
+  const el=document.getElementById('sess-edit-rows');
+  const i=el.querySelectorAll('.se-row').length;
+  const row=document.createElement('div');row.className='se-row';
+  row.innerHTML=`<input type="text" id="sn${i}" value="새 세션" oninput="sessEditDirty=true"><input type="number" id="sm${i}" value="15" min="1" max="300" oninput="sessEditDirty=true"><span class="unit">분</span><button class="del-btn" onclick="this.closest('.se-row').remove()"><i class="ti ti-trash"></i></button>`;
   el.appendChild(row);
 }
-
-function delSessRow(i) {
-  sessEditDirty = true;
-  const rows = document.getElementById('sess-edit-rows').querySelectorAll('.se-row');
-  if (rows.length <= 1) return;
-  rows[i].remove();
+function delSessRow(i){const rows=document.getElementById('sess-edit-rows').querySelectorAll('.se-row');if(rows.length<=1)return;rows[i].remove();sessEditDirty=true}
+function applySessions(){
+  const rows=document.getElementById('sess-edit-rows').querySelectorAll('.se-row');
+  const sessions=Array.from(rows).map((_,i)=>({name:document.getElementById('sn'+i)?.value||'세션',mins:parseInt(document.getElementById('sm'+i)?.value)||15}));
+  const warnYellow=parseInt(document.getElementById('wy').value)||5;
+  const warnRed=parseInt(document.getElementById('wr').value)||1;
+  applyCtrl({action:'updateSessions',sessions,warnYellow,warnRed});
+  renderAll();bcast();
 }
 
-function applySessions() {
-  const rows = document.getElementById('sess-edit-rows').querySelectorAll('.se-row');
-  const sessions = Array.from(rows).map((_,i) => ({
-    name: document.getElementById('sn'+i)?.value || '세션',
-    mins: parseInt(document.getElementById('sm'+i)?.value) || 15,
-  }));
-  const warnYellow = parseInt(document.getElementById('wy').value) || 5;
-  const warnRed    = parseInt(document.getElementById('wr').value) || 1;
-  adminControl('updateSessions');
-  applyControl({action:'updateSessions', sessions, warnYellow, warnRed});
-  renderAll();
-  broadcastState();
-}
-
-// 연자/좌장 → 관리자로 role 등록
-function registerRole() {
-  sendToAdmin({type:'register', role: MY_ROLE});
-}
-
-// 최초 렌더
 renderAll();
 </script>
 </body>
